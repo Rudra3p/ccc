@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sipso Café - A modern coffee experience. Artisan brews, fresh pastries, and a vibe that inspires.">
+    <title>Sipso | The Art of Coffee</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        coffee: {
+                            900: '#2C1810', // Dark Roast
+                            800: '#3E2723',
+                            600: '#5D4037',
+                            400: '#8D6E63',
+                        },
+                        gold: {
+                            500: '#D4A574', // Latte Art
+                            600: '#Bcaaa4',
+                        },
+                        cream: '#F8F5F2', // Background
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2071&auto=format&fit=crop')",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & Utilities */
+        body {
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F8F5F2;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2C1810;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4A574;
+        }
+
+        /* Text Selection */
+        ::selection {
+            background: #D4A574;
+            color: #2C1810;
+        }
+
+        /* Loader Animation */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2C1810;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .cup {
+            width: 80px;
+            height: 60px;
+            border: 4px solid #D4A574;
+            border-top: none;
+            border-radius: 0 0 50px 50px;
+            position: relative;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(212, 165, 116, 0.2);
+        }
+        .cup::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            width: 20px;
+            height: 30px;
+            border: 4px solid #D4A574;
+            border-left: none;
+            border-radius: 0 20px 20px 0;
+        }
+        .steam {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        .steam-line {
+            width: 6px;
+            height: 30px;
+            background: #fff;
+            border-radius: 10px;
+            animation: steam 1.5s infinite linear;
+            opacity: 0;
+        }
+        .steam-line:nth-child(1) { animation-delay: 0.2s; }
+        .steam-line:nth-child(2) { animation-delay: 0.5s; }
+        .steam-line:nth-child(3) { animation-delay: 0.8s; }
+
+        @keyframes steam {
+            0% { transform: translateY(0) scaleX(1); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-40px) scaleX(1.5); opacity: 0; }
+        }
+
+        /* Custom Cursor */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #D4A574;
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(212, 165, 116, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+
+        /* Utility classes for GSAP */
+        .clip-text {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        .char {
+            display: inline-block;
+            transform-origin: 50% 100%;
+        }
+        
+        /* Menu Item Hover */
+        .menu-item-card {
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .menu-item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-cream text-coffee-900 cursor-none">
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot hidden md:block"></div>
+    <div class="cursor-outline hidden md:block"></div>
+
+    <!-- Loader -->
+    <div class="loader-container" id="loader">
+        <div class="cup">
+            <div class="steam">
+                <div class="steam-line"></div>
+                <div class="steam-line"></div>
+                <div class="steam-line"></div>
+            </div>
+        </div>
+        <h2 class="text-gold-500 font-serif text-2xl tracking-widest mt-4">SIPSO</h2>
+        <p class="text-white/50 text-xs font-sans mt-2 tracking-wider">BREWING PERFECTION</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 py-6 px-6 md:px-12 bg-transparent text-white">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="font-serif text-3xl font-bold tracking-tighter hover:text-gold-500 transition-colors">
+                Sipso<span class="text-gold-500">.</span>
+            </a>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex space-x-10 font-sans text-sm font-medium tracking-wide">
+                <a href="#home" class="hover:text-gold-500 transition-colors relative group">
+                    HOME
+                    <span class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#about" class="hover:text-gold-500 transition-colors relative group">
+                    OUR STORY
+                    <span class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#menu" class="hover:text-gold-500 transition-colors relative group">
+                    MENU
+                    <span class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#studio" class="hover:text-gold-500 transition-colors relative group">
+                    THE STUDIO
+                    <span class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#visit" class="hover:text-gold-500 transition-colors relative group">
+                    VISIT
+                    <span class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+            </div>
+
+            <!-- Mobile Button -->
+            <button onclick="toggleMenu()" class="md:hidden text-2xl">
+                <i id="mobileMenuButtonStyle" class="fas fa-bars"></i>
+            </button>
+
+            <!-- Menu (mobile) -->
+            <div id="mobileMenu" class="hidden max-sm:hidden absolute top-[68px] left-[0] bg-coffee-900 w-full h-64 flex-col items-center justify-evenly border-t-[1px] border-[#e5e7eb] font-sans text-sm font-medium text-white tracking-wide">
+                <a href="#home" class="hover:text-black transition-colors">Home</a>
+                <a href="#about" class="hover:text-black transition-colors">About</a>
+                <a href="#menu" class="hover:text-black transition-colors">Menu</a>
+                <a href="#studio" class="hover:text-black transition-colors">Studio</a>
+                <a href="#visit" class="hover:text-black transition-colors">Visit</a>
+            </div>
+
+                        <script>
+                function toggleMenu() {
+                    const menuIcon = document.querySelector('#mobileMenuButtonStyle');
+                    const mobileMenu = document.querySelector('#mobileMenu');
+
+                    if ( menuIcon.classList.contains('fa-bars')) {
+                        mobileMenu.classList.remove('max-sm:hidden');
+                        mobileMenu.classList.add('max-sm:flex');
+                        menuIcon.classList.remove('fa-bars');
+                        menuIcon.classList.add('fa-xmark');
+                    } else {
+                        mobileMenu.classList.remove('max-sm:flex');
+                        mobileMenu.classList.add('max-sm:hidden');
+                        menuIcon.classList.remove('fa-xmark');
+                        menuIcon.classList.add('fa-bars');
+                    }
+                }
+            </script>
+
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="relative w-full h-screen overflow-hidden">
+        <!-- Background Image with Overlay -->
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-black/40 z-10"></div>
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2070&auto=format&fit=crop" 
+                 alt="Coffee Background" 
+                 class="w-full h-full object-cover parallax-bg scale-110">
+        </div>
+
+        <!-- Hero Content -->
+        <div class="relative z-20 h-full flex flex-col justify-center items-center text-center px-4">
+            <p class="hero-subtitle text-gold-500 font-sans font-semibold tracking-[0.3em] mb-4 text-sm md:text-base opacity-0 translate-y-4">
+                ESTABLISHED 2024
+            </p>
+            <h1 class="hero-title font-serif text-5xl md:text-8xl lg:text-9xl text-white font-bold mb-6 overflow-hidden">
+                <span class="inline-block">Taste</span> <span class="inline-block text-gold-500 italic">the</span> <span class="inline-block">Moment</span>
+            </h1>
+            <p class="hero-text text-gray-200 font-sans max-w-lg mx-auto mb-10 text-lg leading-relaxed opacity-0 translate-y-4">
+                Experience the art of coffee in a space designed for creators, dreamers, and lovers of the perfect brew.
+            </p>
+            <div class="hero-btn opacity-0 translate-y-4">
+                <a href="#menu" class="group relative inline-flex items-center gap-3 px-8 py-4 bg-transparent border border-white/30 text-white font-sans text-sm tracking-wider hover:bg-white hover:text-coffee-900 transition-all duration-500 overflow-hidden">
+                    <span class="relative z-10">VIEW MENU</span>
+                    <i class="fas fa-arrow-right relative z-10 group-hover:translate-x-1 transition-transform"></i>
+                    <div class="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out"></div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
+            <div class="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+                <div class="w-1 h-2 bg-gold-500 rounded-full"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-24 md:py-32 px-6 relative bg-cream">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            <!-- Image Grid -->
+            <div class="relative about-images opacity-0">
+                <div class="relative z-10">
+                    <img src="https://images.unsplash.com/photo-1442512595367-4273250983a6?q=80&w=1000&auto=format&fit=crop" 
+                         alt="Latte Art" 
+                         class="w-full h-[500px] object-cover shadow-2xl grayscale hover:grayscale-0 transition-all duration-700">
+                </div>
+                <!-- Floating Accent Image -->
+                <div class="absolute -bottom-10 -right-10 w-48 h-48 md:w-64 md:h-64 border-8 border-cream z-20 hidden md:block">
+                    <img src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=500&auto=format&fit=crop" 
+                         alt="Coffee Beans" 
+                         class="w-full h-full object-cover">
+                </div>
+                <!-- Decorative Pattern -->
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-gold-500/10 z-0"></div>
+            </div>
+
+            <!-- Content -->
+            <div class="about-content">
+                <span class="text-gold-500 font-sans font-bold tracking-widest text-sm uppercase mb-4 block reveal-text">Our Philosophy</span>
+                <h2 class="font-serif text-4xl md:text-5xl text-coffee-900 font-bold mb-6 leading-tight reveal-text">
+                    More than just a <br><span class="italic text-gold-500">caffeine fix.</span>
+                </h2>
+                <p class="text-gray-600 mb-6 leading-relaxed reveal-text font-light">
+                    At Sipso, we believe coffee is a ritual, not a routine. We source our beans ethically from the finest growers in Ethiopia and Colombia, roasting them in small batches to preserve their complex flavor profiles.
+                </p>
+                <p class="text-gray-600 mb-8 leading-relaxed reveal-text font-light">
+                    Whether you need a quiet corner to work or a vibrant space to connect, our modern sanctuary is built for you.
+                </p>
+                
+                <div class="grid grid-cols-3 gap-8 border-t border-coffee-900/10 pt-8 reveal-text">
+                    <div class="text-center">
+                        <span class="block font-serif text-3xl font-bold text-coffee-900">100%</span>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider">Organic</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block font-serif text-3xl font-bold text-coffee-900">15+</span>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider">Single Origins</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block font-serif text-3xl font-bold text-coffee-900">2024</span>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider">Est.</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Signature Menu Section -->
+    <section id="menu" class="py-24 bg-coffee-900 text-cream relative">
+        <!-- Background decoration -->
+        <div class="absolute top-0 right-0 w-1/3 h-full bg-white/5 pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-16">
+                <span class="text-gold-500 font-sans font-bold tracking-widest text-sm uppercase mb-2 block">Curated Selection</span>
+                <h2 class="font-serif text-4xl md:text-5xl text-white font-bold">Signature Menu</h2>
+            </div>
+
+            <!-- Categories -->
+            <div class="flex flex-wrap justify-center gap-4 md:gap-6 mb-12">
+                <button class="menu-filter active px-5 py-2 border border-gold-500 bg-gold-500 text-coffee-900 font-sans text-sm font-semibold hover:bg-gold-500 hover:text-coffee-900 transition-all rounded-full" data-filter="all">All</button>
+                <button class="menu-filter px-5 py-2 border border-white/20 text-white font-sans text-sm font-medium hover:border-gold-500 hover:text-gold-500 transition-all rounded-full" data-filter="coffee">Coffee</button>
+                <button class="menu-filter px-5 py-2 border border-white/20 text-white font-sans text-sm font-medium hover:border-gold-500 hover:text-gold-500 transition-all rounded-full" data-filter="tea">Premium Tea</button>
+                <button class="menu-filter px-5 py-2 border border-white/20 text-white font-sans text-sm font-medium hover:border-gold-500 hover:text-gold-500 transition-all rounded-full" data-filter="boba">Boba</button>
+                <button class="menu-filter px-5 py-2 border border-white/20 text-white font-sans text-sm font-medium hover:border-gold-500 hover:text-gold-500 transition-all rounded-full" data-filter="pastry">Pastry</button>
+            </div>
+
+            <!-- Menu Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- COFFEE ITEMS -->
+                <div class="menu-item group" data-category="coffee">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Espresso Romano</h3>
+                            <span class="font-sans font-bold text-gold-500">$4.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Single shot espresso served with a slice of lemon to highlight the citrus notes.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item group" data-category="coffee">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Caramel Macchiato</h3>
+                            <span class="font-sans font-bold text-gold-500">$5.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Freshly steamed milk with vanilla-flavored syrup marked with espresso and topped with a caramel drizzle.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1485808191679-5f8c7c8f31eb?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item group" data-category="coffee">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Cold Brew</h3>
+                            <span class="font-sans font-bold text-gold-500">$5.00</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Slow-steeped for 20 hours for a super smooth, full-bodied flavor without acidity.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1517701604599-bb29b5dd7326?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASTRY ITEMS -->
+                <div class="menu-item group" data-category="pastry">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Almond Croissant</h3>
+                            <span class="font-sans font-bold text-gold-500">$4.00</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Buttery, flaky pastry filled with sweet almond cream and topped with sliced almonds.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1555507036-ab1f40388085?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="menu-item group" data-category="pastry">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Dark Chocolate Tart</h3>
+                            <span class="font-sans font-bold text-gold-500">$6.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Rich 70% dark chocolate ganache in a crisp cocoa crust.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1559591937-23e5971488c3?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREMIUM TEA ITEMS (New) -->
+                <div class="menu-item group" data-category="tea">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Blooming Flower Tea</h3>
+                            <span class="font-sans font-bold text-gold-500">$7.00</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Hand-tied green tea leaves wrapped around a flower that blooms when steeped.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1597481499750-3e6b22637e12?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item group" data-category="tea">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Silver Needle White</h3>
+                            <span class="font-sans font-bold text-gold-500">$6.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Rare, delicate, and fresh. The champagne of teas with sweet, floral notes.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1563911302283-d2bc129e7c1f?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOBA TEA ITEMS (New) -->
+                <div class="menu-item group" data-category="boba">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Tiger Brown Sugar</h3>
+                            <span class="font-sans font-bold text-gold-500">$6.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Fresh milk swirled with caramelized brown sugar syrup and warm tapioca pearls.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1558160074-4d7d8bdf4256?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item group" data-category="boba">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Royal Taro Milk</h3>
+                            <span class="font-sans font-bold text-gold-500">$6.00</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Creamy, purple taro root blended with milk and topped with crystal boba.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1571328003758-4a3921661729?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item group" data-category="boba">
+                    <div class="bg-white/5 p-6 backdrop-blur-sm border border-white/10 hover:border-gold-500/50 transition-all duration-300 h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-xl text-white group-hover:text-gold-500 transition-colors">Matcha Boba</h3>
+                            <span class="font-sans font-bold text-gold-500">$6.50</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Premium matcha layered with milk and chewy honey boba pearls.</p>
+                        <div class="w-full h-40 overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1576092768241-dec231847233?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Parallax Divider -->
+    <section class="h-[60vh] relative flex items-center justify-center bg-fixed bg-center bg-cover" style="background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1920&auto=format&fit=crop');">
+        <div class="absolute inset-0 bg-black/50"></div>
+        <div class="relative z-10 text-center text-white px-4">
+            <i class="fas fa-quote-left text-4xl text-gold-500 mb-6"></i>
+            <h3 class="font-serif text-3xl md:text-5xl font-bold leading-tight max-w-4xl mx-auto italic">
+                "Coffee is a language in itself."
+            </h3>
+            <p class="mt-4 font-sans tracking-widest text-sm">— Jackie Chan</p>
+        </div>
+    </section>
+
+    <!-- Gallery / Vibe Section -->
+    <section class="py-24 bg-cream">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <span class="text-gold-500 font-sans font-bold tracking-widest text-sm uppercase mb-2 block">The Vibe</span>
+                    <h2 class="font-serif text-4xl md:text-5xl text-coffee-900 font-bold">@SipsoCafe</h2>
+                </div>
+                <a href="#" class="hidden md:block text-coffee-900 font-bold hover:text-gold-500 transition-colors">Follow us on Instagram <i class="fab fa-instagram ml-2"></i></a>
+            </div>
+
+            <!-- Masonry-ish Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 h-[600px] md:h-[500px]">
+                <div class="col-span-2 row-span-2 relative overflow-hidden group rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <i class="fab fa-instagram text-3xl text-white"></i>
+                    </div>
+                </div>
+                <div class="relative overflow-hidden group rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                </div>
+                <div class="relative overflow-hidden group rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1498804103079-a6351b050096?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                </div>
+                <div class="col-span-2 relative overflow-hidden group rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1461023058943-48db0945af47?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: THE STUDIO (Photo Shoot Area) -->
+    <section id="studio" class="bg-coffee-900 relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2">
+            <!-- Content Side -->
+            <div class="p-12 md:p-24 flex flex-col justify-center relative z-10 bg-coffee-800">
+                <span class="text-gold-500 font-sans font-bold tracking-widest text-sm uppercase mb-4 block">For The Creators</span>
+                <h2 class="font-serif text-4xl md:text-6xl text-white font-bold mb-6">The Studio</h2>
+                <p class="text-gray-300 leading-loose mb-8 font-light">
+                    We know your coffee run is also a content run. Step into our dedicated "Studio" corner—a space engineered for the perfect shot.
+                </p>
+                <ul class="space-y-4 mb-10 text-gray-400">
+                    <li class="flex items-center gap-4">
+                        <span class="w-8 h-8 rounded-full bg-gold-500 flex items-center justify-center text-coffee-900"><i class="fas fa-camera"></i></span>
+                        <span>Professional Ring Light Available</span>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <span class="w-8 h-8 rounded-full bg-gold-500 flex items-center justify-center text-coffee-900"><i class="fas fa-lightbulb"></i></span>
+                        <span>Signature Neon Wall Art</span>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <span class="w-8 h-8 rounded-full bg-gold-500 flex items-center justify-center text-coffee-900"><i class="fas fa-couch"></i></span>
+                        <span>Rotating Seasonal Decor</span>
+                    </li>
+                </ul>
+                <div class="flex gap-4">
+                    <button class="px-8 py-3 border border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-coffee-900 transition-all uppercase tracking-widest text-xs font-bold">#SipsoStudio</button>
+                </div>
+            </div>
+
+            <!-- Image Side -->
+            <div class="relative h-[500px] lg:h-auto overflow-hidden group">
+                <div class="absolute inset-0 bg-black/20 z-10 group-hover:bg-transparent transition-colors duration-500"></div>
+                <img src="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000&auto=format&fit=crop" alt="Neon Coffee Sign" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
+                <div class="absolute bottom-10 left-10 z-20">
+                     <p class="text-white font-serif italic text-2xl">"But first, coffee."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="visit" class="bg-coffee-900 text-white pt-24 pb-12 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+            
+            <!-- Brand -->
+            <div>
+                <a href="#" class="font-serif text-4xl font-bold tracking-tighter mb-6 block">
+                    Sipso<span class="text-gold-500">.</span>
+                </a>
+                <p class="text-gray-400 leading-relaxed mb-6">
+                    Crafting moments of clarity and connection through the art of exceptional coffee.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-gold-500 hover:border-gold-500 hover:text-coffee-900 transition-all"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-gold-500 hover:border-gold-500 hover:text-coffee-900 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-gold-500 hover:border-gold-500 hover:text-coffee-900 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <!-- Hours -->
+            <div>
+                <h4 class="font-serif text-xl mb-6">Opening Hours</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li class="flex justify-between"><span>Mon - Fri</span> <span>7:00 AM - 8:00 PM</span></li>
+                    <li class="flex justify-between"><span>Saturday</span> <span>8:00 AM - 9:00 PM</span></li>
+                    <li class="flex justify-between"><span>Sunday</span> <span>8:00 AM - 6:00 PM</span></li>
+                </ul>
+            </div>
+
+            <!-- Links -->
+            <div>
+                <h4 class="font-serif text-xl mb-6">Quick Links</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="#" class="hover:text-gold-500 transition-colors">Our Story</a></li>
+                    <li><a href="#" class="hover:text-gold-500 transition-colors">The Studio</a></li>
+                    <li><a href="#" class="hover:text-gold-500 transition-colors">Wholesale</a></li>
+                    <li><a href="#" class="hover:text-gold-500 transition-colors">Contact</a></li>
+                </ul>
+            </div>
+
+            <!-- Newsletter -->
+            <div>
+                <h4 class="font-serif text-xl mb-6">Stay Caffeinated</h4>
+                <p class="text-gray-400 mb-4 text-sm">Subscribe for updates and exclusive offers.</p>
+                <form class="flex border-b border-white/20 pb-2">
+                    <input type="email" placeholder="Your email address" class="bg-transparent w-full outline-none placeholder-gray-500 text-white">
+                    <button class="text-gold-500 uppercase text-xs font-bold tracking-widest hover:text-white transition-colors">Join</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center pt-8 border-t border-white/10 text-gray-500 text-sm">
+            <p>&copy; 2024 Sipso Café. Designed & Developed by <span class="text-gold-500 font-bold">Team Texnox</span>.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- 1. Loader Logic ---
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+
+            tl.to("#loader .cup", {
+                duration: 1,
+                y: -20,
+                opacity: 0,
+                ease: "power2.inOut",
+                delay: 1.5 // Wait for steam animation
+            })
+            .to("#loader h2, #loader p", {
+                duration: 0.5,
+                opacity: 0,
+                y: 20
+            }, "-=0.5")
+            .to("#loader", {
+                duration: 1,
+                yPercent: -100,
+                ease: "power4.inOut"
+            })
+            .from(".hero-title span", {
+                duration: 1.5,
+                y: 100,
+                opacity: 0,
+                stagger: 0.2,
+                ease: "power3.out"
+            }, "-=0.5")
+            .to(".hero-subtitle", {
+                duration: 1,
+                opacity: 1,
+                y: 0,
+                ease: "power2.out"
+            }, "-=1")
+            .to(".hero-text", {
+                duration: 1,
+                opacity: 1,
+                y: 0,
+                ease: "power2.out"
+            }, "-=0.8")
+            .to(".hero-btn", {
+                duration: 1,
+                opacity: 1,
+                y: 0,
+                ease: "power2.out"
+            }, "-=0.8");
+        });
+
+        // --- 2. Custom Cursor ---
+        const cursorDot = document.querySelector(".cursor-dot");
+        const cursorOutline = document.querySelector(".cursor-outline");
+
+        window.addEventListener("mousemove", (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+
+            // Dot follows instantly
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+
+            // Outline follows with lag (handled by CSS transition or GSAP for smoother)
+            // Using GSAP for smoother lag
+            gsap.to(cursorOutline, {
+                x: posX,
+                y: posY,
+                duration: 0.15,
+                ease: "power2.out"
+            });
+            
+            // Re-center translation logic from CSS removed by GSAP x/y overrides
+            // We need to account for the -50% translate in CSS, GSAP overrides transform.
+            // Better strategy: update left/top and let CSS handle translate
+            // But let's stick to GSAP pure movement for outline:
+        });
+        
+        // Fix for GSAP overriding CSS transform translate(-50%, -50%)
+        gsap.set(".cursor-outline", {xPercent: -50, yPercent: -50});
+        gsap.set(".cursor-dot", {xPercent: -50, yPercent: -50});
+
+        window.addEventListener("mousemove", (e) => {
+            gsap.to(cursorOutline, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.5,
+                ease: "power2.out"
+            });
+            gsap.to(cursorDot, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0,
+            });
+        });
+
+        // Hover effects for cursor
+        document.querySelectorAll('a, button, .menu-item').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                gsap.to(cursorOutline, {
+                    scale: 1.5,
+                    backgroundColor: "rgba(212, 165, 116, 0.1)",
+                    borderColor: "transparent"
+                });
+            });
+            el.addEventListener('mouseleave', () => {
+                gsap.to(cursorOutline, {
+                    scale: 1,
+                    backgroundColor: "transparent",
+                    borderColor: "rgba(212, 165, 116, 0.5)"
+                });
+            });
+        });
+
+        // --- 3. Navbar Scroll Effect ---
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-coffee-900', 'shadow-lg', 'py-4');
+                navbar.classList.remove('bg-transparent', 'py-6');
+            } else {
+                navbar.classList.remove('bg-coffee-900', 'shadow-lg', 'py-4');
+                navbar.classList.add('bg-transparent', 'py-6');
+            }
+        });
+
+        // --- 4. Scroll Animations (ScrollTrigger) ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Parallax Hero Background
+        gsap.to(".parallax-bg", {
+            yPercent: 20,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "#home",
+                start: "top top",
+                end: "bottom top",
+                scrub: true
+            }
+        });
+
+        // About Section Reveal
+        gsap.from(".about-images", {
+            scrollTrigger: {
+                trigger: "#about",
+                start: "top 70%",
+            },
+            x: -50,
+            opacity: 0,
+            duration: 1.5,
+            ease: "power3.out"
+        });
+
+        gsap.from(".reveal-text", {
+            scrollTrigger: {
+                trigger: "#about",
+                start: "top 70%",
+            },
+            y: 30,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
+
+        // Menu Stagger
+        gsap.from(".menu-item", {
+            scrollTrigger: {
+                trigger: "#menu",
+                start: "top 80%",
+            },
+            y: 50,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "back.out(1.7)"
+        });
+        
+        // Studio Section Reveal
+        gsap.from("#studio h2, #studio p, #studio ul", {
+            scrollTrigger: {
+                trigger: "#studio",
+                start: "top 75%",
+            },
+            y: 30,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
+
+        // --- 5. Menu Filtering ---
+        const filterBtns = document.querySelectorAll('.menu-filter');
+        const menuItems = document.querySelectorAll('.menu-item');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-gold-500', 'text-coffee-900', 'border-gold-500');
+                    b.classList.add('text-white', 'border-white/20');
+                });
+                // Add active class
+                btn.classList.remove('text-white', 'border-white/20');
+                btn.classList.add('bg-gold-500', 'text-coffee-900', 'border-gold-500');
+
+                const filterValue = btn.getAttribute('data-filter');
+
+                menuItems.forEach(item => {
+                    if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
+                        gsap.to(item, {
+                            scale: 1,
+                            opacity: 1,
+                            display: 'block',
+                            duration: 0.4
+                        });
+                    } else {
+                        gsap.to(item, {
+                            scale: 0.8,
+                            opacity: 0,
+                            display: 'none',
+                            duration: 0.4
+                        });
+                    }
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>
